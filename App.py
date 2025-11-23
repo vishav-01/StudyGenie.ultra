@@ -6,7 +6,7 @@ import random
 # ---------------------------------------------------
 # PAGE SETUP
 # ---------------------------------------------------
-st.set_page_config(page_title="StudyGenie — Ultra K Edition", layout="wide")
+st.set_page_config(page_title="StudyGenie AI : Your Study Babe 😘", layout="wide")
 
 # ---------------------------------------------------
 # THEME SELECTOR (FROM APP 1)
