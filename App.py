@@ -70,7 +70,7 @@ st.markdown(css, unsafe_allow_html=True)
 # HEADER
 # ---------------------------------------------------
 st.markdown(
-    "<h1 style='text-align:center;color:#4a3b8f;'>✨ "StudyGenie AI - Your Study Babe 💕</h1>",
+    "<h1 style='text-align:center;color:#4a3b8f;'>✨ StudyGenie AI - Your Study Babe 💕 </h1>",
     unsafe_allow_html=True
 )
 st.markdown(
