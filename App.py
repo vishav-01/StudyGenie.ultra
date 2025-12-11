@@ -4,48 +4,26 @@ import json
 import random
 
 # =====================================================
-# PAGE CONFIG
+# PAGE SETTINGS
 # =====================================================
-st.set_page_config(page_title="StudyGenie — K Edition", layout="wide")
+st.set_page_config(page_title="StudyGenie — K•Apple Fusion", layout="wide")
 
 # =====================================================
-# THEME SYSTEM (Default: Doraemon Blue)
+# GLOBAL BACKGROUND (DORAEMON BLUE)
 # =====================================================
-theme = st.sidebar.selectbox(
-    "🌈 Choose Theme",
-    ["Doraemon", "Sky Blue", "Pink Pastel", "Lavender"],
-    index=0   # Default: Doraemon
-)
+BG = "#44a8ff"  # Doraemon Sky Blue
 
-theme_colors = {
-    "Pink Pastel": "#ffd1dc",
-    "Sky Blue": "#cfe8ff",
-    "Lavender": "#e6d7ff",
-    "Doraemon": "#44a8ff"
-}
-
-bg_color = theme_colors[theme]
-
-# =====================================================
-# APPLY CSS
-# =====================================================
 st.markdown(
     f"""
     <style>
         .stApp {{
-            background-color: {bg_color} !important;
+            background-color: {BG} !important;
         }}
         section[data-testid="stSidebar"] {{
-            background-color: {bg_color}20 !important;
+            background-color: {BG}33 !important;
         }}
         html, body, [class*="css"] {{
             font-family: 'Poppins', sans-serif !important;
-        }}
-        .question-box {{
-            padding: 20px;
-            background: white;
-            border-radius: 15px;
-            font-size: 18px;
         }}
     </style>
     """,
@@ -56,7 +34,7 @@ st.markdown(
 # SIDEBAR
 # =====================================================
 with st.sidebar:
-    st.title("😘 StudyGenie AI Study Bestie 💖")
+    st.title("💙 StudyGenie — Your AI Study Bestie 😚")
 
     tool = st.radio(
         "Choose a Tool ✨",
@@ -79,7 +57,7 @@ with st.sidebar:
     )
 
 # =====================================================
-# AI BACKEND CALL
+# AI FUNCTION
 # =====================================================
 def ask_ai(prompt):
     headers = {
@@ -100,7 +78,7 @@ def ask_ai(prompt):
         data = r.json()
 
         if "choices" not in data:
-            return "⚠️ Bestie, the AI fainted 😭"
+            return "⚠️ Bestie, your AI fainted 😭."
 
         reply = data["choices"][0]["message"]["content"]
         st.session_state.chat_history.append({"you": prompt, "ai": reply})
@@ -111,9 +89,7 @@ def ask_ai(prompt):
     except Exception as e:
         return "❌ Error: " + str(e)
 
-# =====================================================
-# SAVE CHAT HISTORY
-# =====================================================
+# Chat initialization
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -121,7 +97,7 @@ if "clear_input" not in st.session_state:
     st.session_state.clear_input = False
 
 # =====================================================
-# NORMAL TOOLS (NOT IQ GAME)
+# NON-IQ TEST TOOLS
 # =====================================================
 if tool != "Mini IQ Test Game 🧠":
     st.markdown(f"<h1 style='text-align:center;'>✨ {tool} ✨</h1>", unsafe_allow_html=True)
@@ -130,80 +106,56 @@ if tool != "Mini IQ Test Game 🧠":
         st.markdown(f"**You:** {chat['you']}")
         st.markdown(f"**Genie:** {chat['ai']}")
 
-    default_text = "" if st.session_state.clear_input else st.session_state.get("last_prompt", "")
-    prompt = st.text_area("Type your message 💬", value=default_text)
-    st.session_state.last_prompt = prompt
+    prompt = st.text_area("Type your message 💬")
 
     if st.button("Send"):
         if prompt.strip() != "":
-            st.session_state.clear_input = True
             response = ask_ai(f"{tool}: {prompt}")
             st.markdown(f"**Genie:** {response}")
-            st.session_state.last_prompt = ""
 
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []
-        st.session_state.last_prompt = ""
-        st.session_state.clear_input = True
         st.rerun()
 
+
 # =====================================================
-# 🧠 NEW MCQ IQ TEST GAME
+# 🧠 MINI IQ TEST (MCQ VERSION)
 # =====================================================
 if tool == "Mini IQ Test Game 🧠":
-    st.markdown("<h1 style='text-align:center;'>🧠 Mini IQ Test (MCQ Edition)</h1>", unsafe_allow_html=True)
 
-    # ============================
-    # 25 REAL IQ MCQ QUESTIONS
-    # ============================
+    st.markdown("<h1 style='text-align:center;'>🧠 Mini IQ Test — Doraemon Edition</h1>", unsafe_allow_html=True)
+
+    # MCQ bank
     iq_mcq = [
-        ("What number comes next? 2,6,12,20,30,__",
-         ["36", "40", "42", "44"], "42"),
-
-        ("Which one is different?",
-         ["Cat", "Dog", "Lion", "Wolf"], "Cat"),
-
-        ("Conclusion? If ALL roses are flowers…",
-         ["All roses fade quickly", "Some roses may fade quickly", "No roses fade quickly"], "Some roses may fade quickly"),
-
-        ("Missing letter? A, D, G, J, M, __",
-         ["O", "P", "N", "Q"], "P"),
-
-        ("Odd number: 27,64,125,144,216",
-         ["27", "144", "125", "216"], "144"),
-
-        ("What's bigger: 3/7 or 4/9?",
-         ["3/7", "4/9"], "4/9"),
-
-        ("Solve: (3×4)² ÷ 6",
-         ["12", "24", "36", "48"], "24"),
-
-        ("Sun : Day :: Moon : __",
-         ["Light", "Sky", "Night", "Dark"], "Night"),
-
-        ("Which weighs more?",
-         ["1 kg iron", "1 kg cotton", "Both same"], "Both same"),
-
-        ("45% of 200 =",
-         ["70", "80", "90", "100"], "90")
-    ]
-
-    # PICK RANDOM QUESTION
-    if "current_q" not in st.session_state:
-        st.session_state.current_q = random.choice(iq_mcq)
-
-    q, options, correct = st.session_state.current_q
-
-    st.markdown(f"<div class='question-box'>{q}</div>", unsafe_allow_html=True)
-
-    user_choice = st.radio("Choose option:", options)
-
-    if st.button("Submit Answer"):
-        if user_choice == correct:
-            st.success("🔥 Correct bestie!! Genius brain unlocked 💙💖")
-        else:
-            st.error(f"😭 Wrong babe… the correct answer was **{correct}** 💗")
-
-    if st.button("New Question"):
-        st.session_state.current_q = random.choice(iq_mcq)
-        st.rerun()
+        {
+            "q": "What number comes next? 2, 6, 12, 20, 30, __",
+            "options": ["A) 36", "B) 40", "C) 42", "D) 48"],
+            "answer": "C"
+        },
+        {
+            "q": "Which one is different?",
+            "options": ["A) Dog", "B) Lion", "C) Wolf", "D) Cat"],
+            "answer": "D"
+        },
+        {
+            "q": "If ALL roses are flowers, which is true?",
+            "options": [
+                "A) Some roses aren't flowers",
+                "B) All roses are flowers",
+                "C) No roses are flowers",
+                "D) Flowers aren’t roses"
+            ],
+            "answer": "B"
+        },
+        {
+            "q": "Missing letter? A, D, G, J, M, __",
+            "options": ["A) O", "B) P", "C) R", "D) S"],
+            "answer": "B"
+        },
+        {
+            "q": "Find odd number:",
+            "options": ["A) 27", "B) 64", "C) 125", "D) 144"],
+            "answer": "D"
+        },
+        {
+            "q": "Sun
