@@ -3,53 +3,74 @@ import requests
 import json
 import random
 
-st.set_page_config(page_title="StudyGenie — K Edition", layout="wide")
+# =====================================================
+# PAGE CONFIG
+# =====================================================
+st.set_page_config(page_title="StudyGenie — K•Apple UI", layout="wide")
 
-# -----------------------------
-# THEME SELECTOR
-# -----------------------------
+# =====================================================
+# THEME SYSTEM (Default: Doraemon Blue Gradient)
+# =====================================================
 theme = st.sidebar.selectbox(
     "🌈 Choose Theme",
-    ["Pink Pastel", "Sky Blue", "Lavender", "Doraemon"]
+    ["Doraemon", "Sky Blue", "Pink Pastel", "Lavender"],
+    index=0
 )
 
 theme_colors = {
-    "Pink Pastel": "#ffd1dc",
-    "Sky Blue": "#cfe8ff",
-    "Lavender": "#e6d7ff",
-    "Doraemon": "#44a8ff"
+    "Doraemon": ("#5EC2FF", "#0089E0"),
+    "Sky Blue": ("#d2eaff", "#8cc8ff"),
+    "Pink Pastel": ("#ffd6e8", "#ffa4c8"),
+    "Lavender": ("#e7d9ff", "#c7a4ff")
 }
 
-bg_color = theme_colors[theme]
+grad_start, grad_end = theme_colors[theme]
 
-# -----------------------------
-# APPLY CSS
-# -----------------------------
+# =====================================================
+# APPLY CSS + GRADIENT + POPPINS FONT
+# =====================================================
 st.markdown(
     f"""
     <style>
+        /* Background Gradient */
         .stApp {{
-            background-color: {bg_color} !important;
+            background: linear-gradient(135deg, {grad_start}, {grad_end}) !important;
+            color: #000000;
         }}
+
+        /* Frosted Sidebar */
         section[data-testid="stSidebar"] {{
-            background-color: {bg_color}20 !important;
+            background: rgba(255,255,255,0.35) !important;
+            backdrop-filter: blur(6px);
         }}
+
+        /* Global Font */
         html, body, [class*="css"] {{
             font-family: 'Poppins', sans-serif !important;
+        }}
+
+        /* Question Box */
+        .question-box {{
+            padding: 22px;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 2px solid #ffffff55;
+            font-size: 19px;
+            margin-bottom: 10px;
         }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# -----------------------------
-# SIDEBAR UI
-# -----------------------------
+# =====================================================
+# SIDEBAR — MAIN MENU
+# =====================================================
 with st.sidebar:
-    st.title("StudyGenie — K Edition 💖")
+    st.title("✨ StudyGenie — K•Apple Edition")
 
     tool = st.radio(
-        "Choose a Tool ✨",
+        "Choose a Tool 💙",
         [
             "AI Doubt Solver",
             "Notes Generator",
@@ -68,9 +89,17 @@ with st.sidebar:
         ]
     )
 
-# -----------------------------
-# AI ASK FUNCTION
-# -----------------------------
+# =====================================================
+# SESSION STATE SETUP
+# =====================================================
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "clear_input" not in st.session_state:
+    st.session_state.clear_input = False
+
+# =====================================================
+# OPENAI BACKEND CALL
+# =====================================================
 def ask_ai(prompt):
     headers = {
         "Content-Type": "application/json",
@@ -80,7 +109,7 @@ def ask_ai(prompt):
     payload = {
         "model": "gpt-4.1-mini",
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 1500,
+        "max_tokens": 4000,
         "temperature": 0.65
     }
 
@@ -90,103 +119,91 @@ def ask_ai(prompt):
         data = r.json()
 
         if "choices" not in data:
-            return "⚠️ Bestie, I think the AI fainted 😭."
+            return "⚠️ Bestie the AI fainted 😭"
 
         reply = data["choices"][0]["message"]["content"]
+
         st.session_state.chat_history.append({"you": prompt, "ai": reply})
+        st.session_state["clear_input"] = True
         return reply
 
     except Exception as e:
         return "❌ Error: " + str(e)
 
-
-# -----------------------------
-# CHAT SYSTEM
-# -----------------------------
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
+# =====================================================
+# NORMAL TOOLS UI
+# =====================================================
 if tool != "Mini IQ Test Game 🧠":
-    st.markdown(f"<h1 style='text-align:center;'>✨ {tool} ✨</h1>", unsafe_allow_html=True)
 
+    st.markdown(
+        f"<h1 style='text-align:center;'>✨ {tool} ✨</h1>",
+        unsafe_allow_html=True
+    )
+
+    # Show chat history
     for chat in st.session_state.chat_history:
         st.markdown(f"**You:** {chat['you']}")
         st.markdown(f"**Genie:** {chat['ai']}")
 
-    prompt = st.text_area("Type your message 💬")
+    # Input field
+    default_text = "" if st.session_state.clear_input else st.session_state.get("last_prompt", "")
+    prompt = st.text_area("Ask me anything 💬", value=default_text)
+    st.session_state.last_prompt = prompt
 
+    # SEND BUTTON
     if st.button("Send"):
-        if prompt.strip() != "":
+        if prompt.strip():
+            st.session_state.clear_input = True
             response = ask_ai(f"{tool}: {prompt}")
             st.markdown(f"**Genie:** {response}")
+            st.session_state.last_prompt = ""
 
+    # CLEAR CHAT
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []
+        st.session_state.last_prompt = ""
         st.rerun()
 
-
 # =====================================================
-# 🧠 MULTI-LEVEL IQ TEST GAME (EASY / MEDIUM / HARD)
+# MINI IQ TEST GAME 🧠
 # =====================================================
-if tool == "Mini IQ Test Game 🧠":
-    st.markdown("<h1 style='text-align:center;'>🧠 Multi-Level IQ Test</h1>", unsafe_allow_html=True)
+else:
+    st.markdown("<h1 style='text-align:center;'>🧠 Mini IQ Test (MCQ Edition)</h1>", unsafe_allow_html=True)
 
-    # Level Selector
-    level = st.selectbox(
-        "Choose Difficulty 🎯",
-        ["Easy", "Medium", "Hard"]
-    )
+    # IQ QUESTIONS LIST
+    iq_mcq = [
+        ("What number comes next? 2, 6, 12, 20, 30, __", ["36", "40", "42", "44"], "42"),
+        ("Which one is different?", ["Cat", "Dog", "Lion", "Wolf"], "Cat"),
+        ("Conclusion? If ALL roses are flowers and SOME flowers fade quickly…",
+         ["All roses fade quickly", "Some roses may fade quickly", "No roses fade quickly"],
+         "Some roses may fade quickly"),
+        ("Missing letter? A, D, G, J, M, __", ["O", "P", "N", "Q"], "P"),
+        ("Odd number: 27,64,125,144,216", ["27", "144", "125", "216"], "144"),
+        ("What's bigger: 3/7 or 4/9?", ["3/7", "4/9"], "4/9"),
+        ("Solve: (3×4)² ÷ 6", ["12", "24", "36", "48"], "24"),
+        ("Sun : Day :: Moon : __", ["Light", "Sky", "Night", "Dark"], "Night"),
+        ("Which weighs more?", ["1 kg iron", "1 kg cotton", "Both same"], "Both same"),
+        ("45% of 200 =", ["70", "80", "90", "100"], "90")
+    ]
 
-    # IQ Question Generator
-    def generate_question(level):
-        if level == "Easy":
-            a = random.randint(5, 20)
-            b = random.randint(5, 20)
-            return f"{a} + {b}", a + b
+    # Load or generate question
+    if "current_q" not in st.session_state:
+        st.session_state.current_q = random.choice(iq_mcq)
 
-        elif level == "Medium":
-            a = random.randint(10, 40)
-            b = random.randint(10, 40)
-            return f"{a} × {b}", a * b
+    question, options, answer = st.session_state.current_q
 
-        elif level == "Hard":
-            a = random.randint(50, 150)
-            b = random.randint(2, 12)
-            c = random.randint(10, 50)
-            expr = f"({a} ÷ {b}) + {c}"
-            return expr, (a / b) + c
+    st.markdown(f"<div class='question-box'>{question}</div>", unsafe_allow_html=True)
 
-    # Store Question
-    if "iq_question" not in st.session_state:
-        q, ans = generate_question(level)
-        st.session_state.iq_question = q
-        st.session_state.iq_answer = ans
-        st.session_state.iq_level = level
+    user_choice = st.radio("Choose option:", options)
 
-    # New question when level changes
-    if level != st.session_state.iq_level:
-        q, ans = generate_question(level)
-        st.session_state.iq_question = q
-        st.session_state.iq_answer = ans
-        st.session_state.iq_level = level
-
-    # Display Question
-    st.subheader(f"Solve this bestie 👉 {st.session_state.iq_question}")
-
-    user_ans = st.text_input("Your answer:")
-
+    # Submit Answer
     if st.button("Submit Answer"):
-        try:
-            if float(user_ans) == float(st.session_state.iq_answer):
-                st.success("💖 AYYYYE you got it right bestie!! Smartest alive 😭🔥")
-            else:
-                st.error("😭 Wrong babe… but I still love you, try again 💗")
-        except:
-            st.warning("Enter a valid number babe 😭💗")
+        if user_choice == answer:
+            st.success("🔥 Correct bestie!! Genius brain unlocked 💙💖")
+        else:
+            st.error(f"😭 Wrong babe… the correct answer was **{answer}** 💗")
 
-    if st.button("New Question"):
-        q, ans = generate_question(level)
-        st.session_state.iq_question = q
-        st.session_state.iq_answer = ans
-        st.session_state.iq_level = level
+    # Next Question
+    if st.button("Next Question"):
+        st.session_state.current_q = random.choice(iq_mcq)
         st.rerun()
