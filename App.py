@@ -90,7 +90,7 @@ def ask_ai(prompt):
     payload = {
         "model": "gpt-4.1-mini",
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 1500,
+        "max_tokens": 4000,
         "temperature": 0.65
     }
 
