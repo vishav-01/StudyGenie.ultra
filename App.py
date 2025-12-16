@@ -1,198 +1,153 @@
 import streamlit as st
-import requests
-import json
-import random
+import requests, json, random
 
-# ================= HARD RESET ON REFRESH =================
-st.session_state.clear()
-
-# ================= PAGE CONFIG =================
+# ================= PAGE =================
 st.set_page_config(page_title="StudyGenie", layout="wide")
 
-# ================= THEME SYSTEM =================
-theme = st.sidebar.selectbox(
-    "🌈 Theme",
-    ["Doraemon", "Sky Blue", "Pink Pastel", "Lavender"],
-)
-
+# ================= THEME =================
+theme = st.sidebar.selectbox("🎨 Theme", ["Doraemon","Sky","Pink","Lavender"])
 themes = {
-    "Doraemon": ("#5EC2FF", "#0089E0"),
-    "Sky Blue": ("#d2eaff", "#8cc8ff"),
-    "Pink Pastel": ("#ffd6e8", "#ffa4c8"),
-    "Lavender": ("#e7d9ff", "#c7a4ff"),
+    "Doraemon":("#5EC2FF","#0089E0"),
+    "Sky":("#d2eaff","#8cc8ff"),
+    "Pink":("#ffd6e8","#ffa4c8"),
+    "Lavender":("#e7d9ff","#c7a4ff")
 }
-
-g1, g2 = themes[theme]
+bg1,bg2 = themes[theme]
 
 # ================= CSS =================
 st.markdown(f"""
 <style>
 .stApp {{
-    background: linear-gradient(135deg, {g1}, {g2});
-    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg,{bg1},{bg2});
+    font-family:Poppins,sans-serif;
 }}
-
-.sidebar .sidebar-content {{
-    background: rgba(255,255,255,0.3);
-}}
-
-.chat-user {{
-    background: #ffffff;
-    padding: 12px 16px;
-    border-radius: 18px 18px 0 18px;
-    max-width: 70%;
-    margin: 10px 0 10px auto;
-}}
-
-.chat-ai {{
-    background: #eaf4ff;
-    padding: 12px 16px;
-    border-radius: 18px 18px 18px 0;
-    max-width: 70%;
-    margin: 10px auto 10px 0;
-}}
-
 .card {{
-    background: rgba(255,255,255,0.85);
-    padding: 20px;
-    border-radius: 18px;
+    background:rgba(255,255,255,0.9);
+    padding:20px;
+    border-radius:16px;
+}}
+.user {{
+    background:#fff;
+    padding:12px;
+    border-radius:16px 16px 0 16px;
+    max-width:70%;
+    margin:8px 0 8px auto;
+}}
+.ai {{
+    background:#eaf3ff;
+    padding:12px;
+    border-radius:16px 16px 16px 0;
+    max-width:70%;
+    margin:8px auto 8px 0;
 }}
 </style>
-""", unsafe_allow_html=True)
+""",unsafe_allow_html=True)
 
-# ================= SIDEBAR =================
-tool = st.sidebar.radio(
-    "✨ Tools",
-    [
-        "AI Planner",
-        "Mindset Reset",
-        "Study Routine Designer",
-        "Exam Strategy Maker",
-        "Personal Study Coach",
-        "Mini IQ Test 🧠"
-    ]
-)
+# ================= TOOLS =================
+tools = [
+ "AI Doubt Solver","Notes Generator","Summary Maker","Timetable Builder",
+ "Motivation Booster","Flashcards","Brain-Dump Cleaner","Answer Checker",
+ "AI Planner","Mindset Reset","Study Routine Designer",
+ "Exam Strategy Maker","Personal Study Coach","Mini IQ Test Game 🧠"
+]
+tool = st.sidebar.radio("✨ Tools", tools)
 
 # ================= MEMORY =================
 if "memory" not in st.session_state:
-    st.session_state.memory = {t: [] for t in [
-        "AI Planner", "Mindset Reset", "Study Routine Designer",
-        "Exam Strategy Maker", "Personal Study Coach"
-    ]}
+    st.session_state.memory = {t:[] for t in tools}
 
-# ================= MOOD DETECTION =================
-def detect_mood(text):
-    t = text.lower()
-    if any(w in t for w in ["sad","tired","cry","low","alone"]):
-        return "sad 😔"
-    if any(w in t for w in ["stress","exam","panic","pressure"]):
-        return "stressed 😵‍💫"
-    if any(w in t for w in ["happy","excited","love","confident"]):
-        return "happy 😊"
-    return "neutral 🙂"
+# ================= MOOD =================
+def mood(txt):
+    t=txt.lower()
+    if any(w in t for w in ["sad","low","cry","alone"]): return "sad"
+    if any(w in t for w in ["stress","exam","panic"]): return "stressed"
+    if any(w in t for w in ["happy","excited","love"]): return "happy"
+    return "neutral"
 
-# ================= AI CALL =================
-def ask_ai(user_input, tool):
-    mood = detect_mood(user_input)
-    memory_text = "\n".join(
-        [f"User: {m['u']}\nAI: {m['a']}" for m in st.session_state.memory[tool][-4:]]
-    )
+# ================= AI =================
+def ask_ai(msg,tool):
+    context=""
+    for m in st.session_state.memory[tool][-4:]:
+        context+=f"User:{m['u']}\nAI:{m['a']}\n"
 
-    prompt = f"""
-You are StudyGenie, a warm Gen-Z AI study bestie.
-User mood: {mood}
+    prompt=f"""
+You are StudyGenie, a friendly Gen-Z AI study assistant.
+User mood: {mood(msg)}
 
-Memory:
-{memory_text}
+Context:
+{context}
 
-User message:
-{user_input}
+Task: {tool}
+User: {msg}
 """
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.secrets['OPENAI_API_KEY']}"
+    headers={
+      "Authorization":f"Bearer {st.secrets['OPENAI_API_KEY']}",
+      "Content-Type":"application/json"
+    }
+    payload={
+      "model":"gpt-4.1-mini",
+      "messages":[{"role":"user","content":prompt}],
+      "temperature":0.6,
+      "max_tokens":1200
     }
 
-    payload = {
-        "model": "gpt-4.1-mini",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.6,
-        "max_tokens": 1200
-    }
-
-    r = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers=headers,
-        data=json.dumps(payload),
-        timeout=20
+    r=requests.post(
+      "https://api.openai.com/v1/chat/completions",
+      headers=headers,
+      data=json.dumps(payload),
+      timeout=20
     )
-
-    data = r.json()
-    reply = data["choices"][0]["message"]["content"]
-
-    st.session_state.memory[tool].append({"u": user_input, "a": reply})
+    reply=r.json()["choices"][0]["message"]["content"]
+    st.session_state.memory[tool].append({"u":msg,"a":reply})
     return reply
 
-# ================= CHAT UI =================
-if tool != "Mini IQ Test 🧠":
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+# ================= CHAT FEATURES =================
+if tool!="Mini IQ Test Game 🧠":
+    st.markdown("<div class='card'>",unsafe_allow_html=True)
 
     for m in st.session_state.memory[tool]:
-        st.markdown(f"<div class='chat-user'>{m['u']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='chat-ai'>{m['a']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='user'>{m['u']}</div>",unsafe_allow_html=True)
+        st.markdown(f"<div class='ai'>{m['a']}</div>",unsafe_allow_html=True)
 
-    msg = st.text_area("Type here…", height=80)
+    msg=st.text_area("Type here…",height=80)
 
-    if st.button("Send ✨") and msg.strip():
-        reply = ask_ai(msg, tool)
-        st.rerun()
+    if st.button("Send"):
+        if msg.strip():
+            ask_ai(msg,tool)
+            st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>",unsafe_allow_html=True)
 
 # ================= IQ GAME =================
-if tool == "Mini IQ Test 🧠":
+if tool=="Mini IQ Test Game 🧠":
 
-    def generate_iq():
-        q = []
-        for _ in range(50):
-            a = random.randint(3, 10)
+    def iq_bank():
+        q=[]
+        for _ in range(120):
+            n=random.randint(3,15)
             q.append((
-                f"What comes next? {a}, {a*2}, {a*3}, {a*4}, ?",
-                [str(a*5), str(a*6), str(a*4), str(a*7)],
-                str(a*5)
-            ))
-        for _ in range(30):
-            n = random.randint(4, 12)
-            q.append((
-                f"What is {n}² + {n}³?",
-                [str(n*n), str(n**3), str(n*n+n**3), str(n**3-n)],
-                str(n*n+n**3)
-            ))
-        for _ in range(30):
-            x,y = random.randint(10,99), random.randint(10,99)
-            q.append((
-                f"Which is larger? {x}/{y} or {y}/{x}",
-                [f"{x}/{y}", f"{y}/{x}"],
-                f"{y}/{x}" if (y/x) > (x/y) else f"{x}/{y}"
+              f"What is {n}² + {n}³ ?",
+              [str(n*n),str(n**3),str(n*n+n**3),str(n**3-n)],
+              str(n*n+n**3)
             ))
         return q
 
     if "iq" not in st.session_state:
-        st.session_state.iq = generate_iq()
-        st.session_state.q = random.choice(st.session_state.iq)
+        st.session_state.iq=iq_bank()
+        st.session_state.q=random.choice(st.session_state.iq)
 
-    ques, opts, ans = st.session_state.q
+    ques,opts,ans=st.session_state.q
 
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown(f"**🧠 {ques}**")
-    choice = st.radio("Choose:", opts)
+    st.markdown("<div class='card'>",unsafe_allow_html=True)
+    st.markdown(f"🧠 **{ques}**")
+    c=st.radio("Choose:",opts)
 
     if st.button("Submit"):
-        st.success("🔥 Correct!" if choice == ans else f"❌ Wrong. Answer: {ans}")
+        st.success("Correct 🔥" if c==ans else f"Wrong ❌ Answer: {ans}")
 
-    if st.button("Next Question"):
-        st.session_state.q = random.choice(st.session_state.iq)
+    if st.button("Next"):
+        st.session_state.q=random.choice(st.session_state.iq)
         st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>",unsafe_allow_html=True)
